@@ -5,7 +5,7 @@ const ffmpeg = require('fluent-ffmpeg');
 const { log } = require('console');
 ffmpeg.setFfmpegPath(ffmpegPath);
 
-const videoURL = 'https://www.youtube.com/watch?v=k0mt4IbpVl4';
+const videoURL = 'https://www.youtube.com/watch?v=f7Lfukf0IKY';
 
 let videoTitle;
 
@@ -77,9 +77,9 @@ const secondsToHHMMSS = (seconds) => {
 function trimVideo(inputFile, outputFile, startTime, endTime) {
     return new Promise((resolve, reject) => {
         const duration = calculateDuration(startTime, endTime);
-        console.log(startTime);
-        console.log(endTime);
-        console.log(duration);
+        // console.log(startTime);
+        // console.log(endTime);
+        // console.log(duration);
         ffmpeg(inputFile)
             .setStartTime(startTime)
             .duration(duration)
@@ -110,40 +110,76 @@ const findTimestamps = (desc, duration) => {
     return timestamps;
 }
 
-const getStampsAndTrim = async (url, outputPath) => {
+// const getStampsAndTrim = async (url, outputPath) => {
+//     try {
+//         const info = await ytdl.getInfo(url);
+//         const description = info.videoDetails.description;
+//         const duration = secondsToHHMMSS(info.videoDetails.lengthSeconds);
+
+//         const timestamps = findTimestamps(description, duration);
+
+//         const downloadedVideo = await downloadVideo(videoURL);
+//         console.log("Trimmming Starting");
+//         // await trimVideo(downloadedVideo, outputPath, '01:00', '07:00');
+
+//         if (timestamps.length > 0) {
+//             for (let i = 0; i < timestamps.length - 1; i++) {
+//                 const startTime = timestamps[i];
+//                 const endTime = timestamps[i + 1];
+//                 const outputFileName = `${outputPath}_${i + 1}.mp4`;
+//                 await trimVideo(downloadedVideo, outputFileName, startTime, endTime);
+//                 console.log(`Segment ${i + 1} trimmed successfully from ${startTime} to ${endTime}`);
+//             }
+//         } else {
+//             console.log('No timestamps found. Video will not be trimmed.');
+//         }
+
+//         console.log('Video trimmed successfully');
+//     } catch (error) {
+//         console.error('Error:', error);
+//     }
+// };
+
+// getStampsAndTrim(videoURL, 'trimmed.mp4');
+
+const getTimestampPairs = async (url) => {
     try {
         const info = await ytdl.getInfo(url);
         const description = info.videoDetails.description;
         const duration = secondsToHHMMSS(info.videoDetails.lengthSeconds);
 
         const timestamps = findTimestamps(description, duration);
-
-        const downloadedVideo = await downloadVideo(videoURL);
-        console.log("Trimmming Starting");
-        // await trimVideo(downloadedVideo, outputPath, '01:00', '07:00');
+        const timestampPairs = [];
 
         if (timestamps.length > 0) {
             for (let i = 0; i < timestamps.length - 1; i++) {
                 const startTime = timestamps[i];
                 const endTime = timestamps[i + 1];
-                const outputFileName = `${outputPath}_${i + 1}.mp4`;
-                await trimVideo(downloadedVideo, outputFileName, startTime, endTime);
-                console.log(`Segment ${i + 1} trimmed successfully from ${startTime} to ${endTime}`);
+                timestampPairs.push({ startTime, endTime });
             }
-        } else {
-            console.log('No timestamps found. Video will not be trimmed.');
         }
 
-        console.log('Video trimmed successfully');
+        return timestampPairs;
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error fetching timestamps from video:', error);
+        throw error;
     }
 };
 
-// getStampsAndTrim(videoURL, 'trimmed.mp4');
+// const trimVideoBasedOnSelection = async (url, outputPath, startTime, endTime) => {
+//     try {
+//         const downloadedVideo = await downloadVideo(url);
+//         console.log("Trimming Starting");
+//         await trimVideo(downloadedVideo, outputPath, startTime, endTime);
+//         console.log(`Video trimmed successfully from ${startTime} to ${endTime}`);
+//     } catch (error) {
+//         console.error('Error trimming video:', error);
+//         throw error;
+//     }
+// };
 
 
-module.exports = { getStampsAndTrim };
+module.exports = { getTimestampPairs, trimVideo, downloadVideo };
 
 
 
