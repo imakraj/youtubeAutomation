@@ -1,0 +1,36 @@
+<!-- upload.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Video to YouTube</title>
+</head>
+<body>
+    <h1>Upload Video to YouTube</h1>
+    <button id="uploadButton">Upload Trimmed Video</button>
+
+    <script>
+        document.getElementById('uploadButton').addEventListener('click', async () => {
+            try {
+                const videoPath = 'trimmed.mp4'; // Path to the trimmed video
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        videoPath: videoPath
+                    })
+                });
+                const data = await response.json();
+                console.log(data);
+                alert('Video uploaded successfully!');
+            } catch (error) {
+                console.error('Error uploading video:', error);
+                alert('Error uploading video. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html>
