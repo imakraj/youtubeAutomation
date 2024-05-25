@@ -1,3 +1,4 @@
 /node_modules
+/assets
 client_secret.json
 *.mp4

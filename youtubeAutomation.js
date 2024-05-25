@@ -2,19 +2,38 @@ const fs = require('fs').promises;
 const ytdl = require('ytdl-core');
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 const ffmpeg = require('fluent-ffmpeg');
-const { log } = require('console');
+const { log, time } = require('console');
+const path = require('path');
 ffmpeg.setFfmpegPath(ffmpegPath);
 
 const videoURL = 'https://www.youtube.com/watch?v=f7Lfukf0IKY';
 
 let videoTitle;
 
+async function checkFileExists(filePath) {
+    try {
+        await fs.access(filePath);
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
 async function downloadVideo(videoUrl) {
     try {
         const video = ytdl(videoUrl, { filter: 'audioandvideo', quality: 'highestvideo' });
         const info = await ytdl.getInfo(videoUrl);
-        videoTitle = info.videoDetails.title; // Store video title
-        const fileName = `${videoTitle}video.mp4`;
+        videoTitle = info.videoDetails.title;
+        // const fileName = `${videoTitle}video.mp4`;
+        const folderName = 'assets';
+        const fileName = path.join(folderName, `${videoTitle}video.mp4`);
+
+        // Check if the file already exists
+        const fileExists = await checkFileExists(fileName);
+        if (fileExists) {
+            console.log('File already exists. Skipping download.');
+            return fileName;
+        }
 
         const data = await new Promise((resolve, reject) => {
             let chunks = [];
@@ -29,9 +48,13 @@ async function downloadVideo(videoUrl) {
             });
         });
 
+        await fs.mkdir(folderName, { recursive: true });
         await fs.writeFile(fileName, data);
 
+        // await fs.writeFile(fileName, data);
+
         console.log('Download complete');
+
         return fileName;
     } catch (error) {
         console.error('Error downloading video:', error);
@@ -74,16 +97,18 @@ const secondsToHHMMSS = (seconds) => {
     }
 };
 
-function trimVideo(inputFile, outputFile, startTime, endTime) {
+async function trimVideo(inputFile, outputFile, startTime, endTime) {
+    const folderName = path.join('assets', 'uploads');
+    const outputFileName = path.join(folderName, path.basename(outputFile));
+
+    await fs.mkdir(folderName, { recursive: true });
+
     return new Promise((resolve, reject) => {
         const duration = calculateDuration(startTime, endTime);
-        // console.log(startTime);
-        // console.log(endTime);
-        // console.log(duration);
         ffmpeg(inputFile)
             .setStartTime(startTime)
             .duration(duration)
-            .output(outputFile)
+            .output(outputFileName)
             .on('end', function () {
                 console.log('Trimming complete');
                 resolve();
@@ -110,38 +135,6 @@ const findTimestamps = (desc, duration) => {
     return timestamps;
 }
 
-// const getStampsAndTrim = async (url, outputPath) => {
-//     try {
-//         const info = await ytdl.getInfo(url);
-//         const description = info.videoDetails.description;
-//         const duration = secondsToHHMMSS(info.videoDetails.lengthSeconds);
-
-//         const timestamps = findTimestamps(description, duration);
-
-//         const downloadedVideo = await downloadVideo(videoURL);
-//         console.log("Trimmming Starting");
-//         // await trimVideo(downloadedVideo, outputPath, '01:00', '07:00');
-
-//         if (timestamps.length > 0) {
-//             for (let i = 0; i < timestamps.length - 1; i++) {
-//                 const startTime = timestamps[i];
-//                 const endTime = timestamps[i + 1];
-//                 const outputFileName = `${outputPath}_${i + 1}.mp4`;
-//                 await trimVideo(downloadedVideo, outputFileName, startTime, endTime);
-//                 console.log(`Segment ${i + 1} trimmed successfully from ${startTime} to ${endTime}`);
-//             }
-//         } else {
-//             console.log('No timestamps found. Video will not be trimmed.');
-//         }
-
-//         console.log('Video trimmed successfully');
-//     } catch (error) {
-//         console.error('Error:', error);
-//     }
-// };
-
-// getStampsAndTrim(videoURL, 'trimmed.mp4');
-
 const getTimestampPairs = async (url) => {
     try {
         const info = await ytdl.getInfo(url);
@@ -165,18 +158,6 @@ const getTimestampPairs = async (url) => {
         throw error;
     }
 };
-
-// const trimVideoBasedOnSelection = async (url, outputPath, startTime, endTime) => {
-//     try {
-//         const downloadedVideo = await downloadVideo(url);
-//         console.log("Trimming Starting");
-//         await trimVideo(downloadedVideo, outputPath, startTime, endTime);
-//         console.log(`Video trimmed successfully from ${startTime} to ${endTime}`);
-//     } catch (error) {
-//         console.error('Error trimming video:', error);
-//         throw error;
-//     }
-// };
 
 
 module.exports = { getTimestampPairs, trimVideo, downloadVideo };

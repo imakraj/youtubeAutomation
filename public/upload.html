@@ -13,19 +13,20 @@
     <script>
         document.getElementById('uploadButton').addEventListener('click', async () => {
             try {
-                const videoPath = 'trimmed.mp4'; // Path to the trimmed video
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        videoPath: videoPath
-                    })
+                // const videoPath = 'trimmed.mp4'; // Path to the trimmed video
+                const response = await fetch('/upload-all', {
+                    method: 'POST'
                 });
                 const data = await response.json();
                 console.log(data);
                 alert('Video uploaded successfully!');
+
+                if (data.redirectUrl) {
+                    setTimeout(() => {
+                        window.location.href = data.redirectUrl;
+                    }, 0);
+                }
+                
             } catch (error) {
                 console.error('Error uploading video:', error);
                 alert('Error uploading video. Please try again.');

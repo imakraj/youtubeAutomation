@@ -1,5 +1,6 @@
 const fs = require('fs');
 const { google } = require('googleapis');
+const path = require('path');
 
 const clientSecretFile = 'client_secret.json';
 const clientSecrets = JSON.parse(fs.readFileSync(clientSecretFile));
@@ -32,7 +33,6 @@ async function getAccessToken(code) {
    });
 }
 
-
 async function uploadVideo(filePath) {
   const fileSize = fs.statSync(filePath).size;
   const resumableUpload = await youtube.videos.insert(
@@ -62,8 +62,19 @@ async function uploadVideo(filePath) {
   console.log('Video uploaded:', resumableUpload.data.snippet.title);
 }
 
+async function uploadAllVideos(directory) {
+  const files = fs.readdirSync(directory);
+  for (const file of files) {
+    const filePath = path.join(directory, file);
+    if (fs.statSync(filePath).isFile()) {
+      console.log(`Uploading ${filePath}...`);
+      await uploadVideo(filePath);
+    }
+  }
+}
+
 module.exports = {
   generateAuthUrl,
   getAccessToken,
-  uploadVideo,
+  uploadAllVideos,
 };

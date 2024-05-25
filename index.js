@@ -1,6 +1,7 @@
 const express = require('express');
 const { getTimestampPairs, trimVideo, downloadVideo } = require('./youtubeAutomation');
-const { generateAuthUrl, getAccessToken, uploadVideo } = require('./youtubeUpload');
+const { generateAuthUrl, getAccessToken, uploadAllVideos } = require('./youtubeUpload');
+const path = require('path');
 
 const app = express();
 
@@ -28,12 +29,11 @@ app.post('/trim-video', async (req, res) => {
         let count = 1;
         for (const timestamp of selectedTimestamps) {
             const [startTime, endTime] = timestamp.split(',');
-            console.log(startTime);
             console.log("-------------------------------");
-            console.log(endTime);
-            console.log("-------------------------------");
+            console.log(`Duration     ${startTime} - ${endTime}`);
             const outputFile = `output_${count++}.mp4`;
             await trimVideo(inputFile, outputFile, startTime, endTime);
+            console.log("-------------------------------");
         }
 
         // res.status(200).json({ message: 'Video trimming process started successfully' });
@@ -61,16 +61,27 @@ app.get('/google/callback', async (req, res) => {
     }
 });
 
-app.post('/upload', async (req, res) => {
-    const videoPath = req.body.videoPath;
-    console.log('Uploading video:', videoPath);
+// app.post('/upload', async (req, res) => {
+//     const videoPath = req.body.videoPath;
+//     console.log('Uploading video:', videoPath);
 
+//     try {
+//         await uploadVideo(videoPath);
+//         res.status(200).json({ message: 'Video uploaded successfully' });
+//     } catch (error) {
+//         console.error('Error uploading video:', error);
+//         res.status(500).json({ error: error });
+//     }
+// });
+
+app.post('/upload-all', async (req, res) => {
+    const uploadDir = path.join(__dirname, 'assets/uploads');
     try {
-        await uploadVideo(videoPath);
-        res.status(200).json({ message: 'Video uploaded successfully' });
+        await uploadAllVideos(uploadDir);
+        res.status(200).json({ message: 'All videos uploaded successfully', redirectUrl: '/' });
     } catch (error) {
-        console.error('Error uploading video:', error);
-        res.status(500).json({ error: error });
+        console.error('Error uploading videos:', error);
+        res.status(500).json({ error: 'Error uploading videos' });
     }
 });
 
